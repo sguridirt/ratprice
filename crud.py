@@ -1,14 +1,15 @@
+import os
 from datetime import datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import close_all_sessions
 
-from config import DATABASE_URI
 from models import Base, User, Product, Price, user_tracked_products_table
 
+DATABASE_URL = os.environ["DATABASE_URL"]
 
-engine = create_engine(DATABASE_URI)
+engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 
 
