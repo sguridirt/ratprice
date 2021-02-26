@@ -1,6 +1,4 @@
-import os
 import datetime
-from typing import Counter
 
 from requests_html import HTMLSession
 
