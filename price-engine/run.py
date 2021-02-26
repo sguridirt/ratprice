@@ -68,7 +68,8 @@ def run():
 
             variation = compare_last_two_prices(product.doc_id)
 
-            if variation <= -0.0:
+            if variation != 0:
+                print("> (i) notifying the user for price change")
                 send_info(
                     "REDACTED",
                     {"name": product.name, "price": price.number, "url": product.url},
