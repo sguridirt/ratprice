@@ -61,7 +61,7 @@ def run():
             print("Product:", product.name)
 
             price = get_price(product.url)
-            price = Price(price, datetime.datetime.now())
+            price = Price(price, datetime.datetime.now(datetime.timezone.utc))
             save_price(product.doc_id, price)
 
             variation = compare_last_two_prices(product.doc_id)
