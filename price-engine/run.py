@@ -6,6 +6,8 @@ from email.mime.multipart import MIMEMultipart
 
 from requests_html import HTMLSession
 
+from .database import db
+
 session = HTMLSession()
 
 
