@@ -11,7 +11,7 @@ sender = "ratprice. <ratpricemsg@gmail.com>"
 
 text = """\
 Hi!
-{0}'s current price is: ${1}.
+{0}'s current price is: ${1} ({3}%% since last check)
 Your product url: {2}
 
 Enjoy!
@@ -21,7 +21,7 @@ html = """\
 <html>
     <body>
         <p>🐭💰</p>
-        <p><a href="{2}">{0}</a>'s current price is: $<b>{1}</b></p>
+        <p><a href="{2}">{0}</a>'s current price is: $<b>{1}</b> ({3}%% since last check)</p>
     </body>
 </html>"""
 
@@ -34,10 +34,16 @@ def send_info(receiver, data):
     message["To"] = receiver
 
     message.attach(
-        MIMEText(text.format(data["name"], data["price"], data["url"]), "plain")
+        MIMEText(
+            text.format(data["name"], data["price"], data["url"], data["variation"]),
+            "plain",
+        )
     )
     message.attach(
-        MIMEText(html.format(data["name"], data["price"], data["url"]), "html")
+        MIMEText(
+            html.format(data["name"], data["price"], data["url"], data["variation"]),
+            "html",
+        )
     )
 
     with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:

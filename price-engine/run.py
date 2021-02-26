@@ -70,7 +70,12 @@ def run():
                 print("> (i) notifying the user for price change")
                 send_info(
                     "REDACTED",
-                    {"name": product.name, "price": price.number, "url": product.url},
+                    {
+                        "name": product.name,
+                        "price": price.number,
+                        "variation": variation,
+                        "url": product.url,
+                    },
                 )
 
             print(f"> (i) price: ${price} ({variation * 100}% since last check)\n")
