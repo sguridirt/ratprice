@@ -20,7 +20,7 @@ ratprice."""
 html = """\
 <html>
     <body>
-        <p>💰🐭💰</p>
+        <p>🐭💰</p>
         <p><a href="{2}">{0}</a>'s current price is: $<b>{1}</b></p>
     </body>
 </html>"""
