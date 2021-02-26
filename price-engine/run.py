@@ -1,25 +1,24 @@
 import os
 import datetime
-import smtplib, ssl
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from typing import Counter
 
 from requests_html import HTMLSession
 
 from database import db
+from notificator import send_info
 
 
 session = HTMLSession()
 
 
+def parse_price(price_str):
+    return int(price_str.split(" ")[0].replace("$", "").replace(".", ""))
+
+
 def get_price(url):
     r = session.get(url)
     price_selector = "#pdpMain > div.row.row-flex.pdp-main-info > div.col-xs-12.col-sm-12.col-md-6.col-lg-5.info-product-detail > div > div.col-xs-12.product-price-2 > div.col-md-6.col-xs-7.price.noPad > div.item-price"
-    return r.html.find(price_selector, first=True).text.split(" ")[0].replace("$", "")
-
-
-def parse_price(price_str):
-    return int(price_str.replace(".", ""))
+    return parse_price(r.html.find(price_selector, first=True).text)
 
 
 def save_price(product_id, price):
@@ -27,65 +26,57 @@ def save_price(product_id, price):
         "prices"
     ).add(
         {
-            "number": parse_price(price),
-            "udatetime": datetime.datetime.now(),
+            "number": price,
+            "datetime": datetime.datetime.now(),
         }
     )
 
 
-port = 465
-context = ssl.create_default_context()
-sender = "ratprice. <ratpricemsg@gmail.com>"
-
-
-text = """\
-Hi!
-{0}'s current price is: ${1}.
-Your product link: {2}
-
-Enjoy!
-ratprice."""
-
-html = """\
-<html>
-    <body>
-        <p>💰🐭💰</p>
-        <p><a href="{2}">{0}</a>'s current price is: $<b>{1}</b></p>
-    </body>
-</html>"""
-
-
-def send_info(receiver, data):
-
-    message = MIMEMultipart("alternative")
-    message["Subject"] = f"{data['name']} price: ${data['price']}"
-    message["From"] = sender
-    message["To"] = receiver
-
-    message.attach(
-        MIMEText(text.format(data["name"], data["price"], data["link"]), "plain")
+def compare_two_last_prices(product_id):
+    last_price_ref = (
+        db.collection("products")
+        .document(product_id)
+        .collection("prices")
+        .order_by("udatetime")
+        .limit(2)
+        .stream()
     )
-    message.attach(
-        MIMEText(html.format(data["name"], data["price"], data["link"]), "html")
-    )
+    try:
+        [current_price_doc, last_price_doc] = last_price_ref
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
-        server.login("ratpricemsg@gmail.com", os.environ["PASSWD"])
-        server.sendmail(sender, receiver, message.as_string())
+        current_price = current_price_doc.to_dict()["number"]
+        last_price = last_price_doc.to_dict()["number"]
+
+        variation_decimal_pts = (last_price - current_price) / current_price
+        return variation_decimal_pts
+
+    except ValueError:
+        print(
+            "> (!) there weren't enough saved prices for the product. Variation set to 0 (zero)"
+        )
+        return 0
 
 
 def run():
-    print("Running...")
+    print("Running...\n")
     product_docs = db.collection("products").stream()
     for product_doc in product_docs:
         if product_doc.exists:
             product = product_doc.to_dict()
+            print("Product:", product["name"])
             price = get_price(product["URL"])
             save_price(product_doc.id, price)
-            send_info(
-                "REDACTED",
-                {"name": product["name"], "price": price, "link": product["URL"]},
-            )
+
+            variation = compare_two_last_prices(product_doc.id)
+
+            if variation < -0.4:
+                send_info(
+                    "REDACTED",
+                    {"name": product["name"], "price": price, "link": product["URL"]},
+                )
+
+            print(f"> (i) price: ${price} ({variation * 100}% since last check)\n")
+
     print("Finished")
 
 
