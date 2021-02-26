@@ -17,8 +17,10 @@ def get_price(url):
     price_selector = "#pdpMain > div.row.row-flex.pdp-main-info > div.col-xs-12.col-sm-12.col-md-6.col-lg-5.info-product-detail > div > div.col-xs-12.product-price-2 > div.col-md-6.col-xs-7.price.noPad > div.item-price"
     return r.html.find(price_selector, first=True).text.split(" ")[0].replace("$", "")
 
+
 def parse_price(price_str):
-    return int(price_str.replace('.', ''))
+    return int(price_str.replace(".", ""))
+
 
 def save_price(product_id, price):
     db.collection("products").document("{0}".format(product_id)).collection(
@@ -73,17 +75,18 @@ def send_info(receiver, data):
 
 
 def run():
-
-    product_ref = db.collection("products").document("jE3ZJPLjbSuu66PgPG7K")
-    product_doc = product_ref.get()
-    if product_doc.exists:
-        product = product_doc.to_dict()
-        price = get_price(product["URL"])
-        save_price(product_doc.id, price)
-        send_info(
-            "REDACTED",
-            {"name": product["name"], "price": price, "link": product["URL"]},
-        )
+    print("Running...")
+    product_docs = db.collection("products").stream()
+    for product_doc in product_docs:
+        if product_doc.exists:
+            product = product_doc.to_dict()
+            price = get_price(product["URL"])
+            save_price(product_doc.id, price)
+            send_info(
+                "REDACTED",
+                {"name": product["name"], "price": price, "link": product["URL"]},
+            )
+    print("Finished")
 
 
 run()
