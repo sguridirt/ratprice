@@ -6,18 +6,16 @@ from database import db
 from models import Product, Price
 from notificator import send_info
 
-
-session = HTMLSession()
-
-
-def parse_price(price_str):
-    return int(price_str.split(" ")[0].replace("$", "").replace(".", ""))
+from scrappers import paris, falabella, ripley
 
 
 def get_price(url):
-    r = session.get(url)
-    price_selector = "#pdpMain > div.row.row-flex.pdp-main-info > div.col-xs-12.col-sm-12.col-md-6.col-lg-5.info-product-detail > div > div.col-xs-12.product-price-2 > div.col-md-6.col-xs-7.price.noPad > div.item-price"
-    return parse_price(r.html.find(price_selector, first=True).text)
+    if "falabella.com" in url:
+        return falabella.get_price(url)
+    elif "paris.cl" in url:
+        return paris.get_price(url)
+    elif "ripley.cl" in url:
+        return ripley.get_price(url)
 
 
 def save_price(product_id, price):
@@ -46,7 +44,7 @@ def compare_last_two_prices(product_id):
 
     except ValueError:
         print(
-            "> (!) there weren't enough saved prices for the product. Variation set to 0 (zero)"
+            "> (!) there weren't saved prices for the product. Variation set to 0 (zero)"
         )
         return 0
 
