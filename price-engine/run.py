@@ -1,12 +1,15 @@
+import sys
 import datetime
 
-from requests_html import HTMLSession
+from loguru import logger
 
 from database import db
 from models import Product, Price
 from notificator import send_info
 
 from scrappers import paris, falabella, ripley, pcfactory
+
+logger.add("ratprice.log", colorize=True)
 
 
 def get_price(url):
@@ -45,20 +48,20 @@ def compare_last_two_prices(product_id):
         return variation_decimal_pts
 
     except ValueError:
-        print(
+        logger.info(
             "> (!) there weren't saved prices for the product. Variation set to 0 (zero)"
         )
         return 0
 
 
 def run():
-    print("Running...\n")
+    logger.info("Running...\n")
     product_docs = db.collection("products").stream()
     for product_doc in product_docs:
         if product_doc.exists:
             product = Product.from_dict(product_doc.id, product_doc.to_dict())
 
-            print("Product:", product.name)
+            logger.info(f"Product: {product.name}")
 
             price = get_price(product.url)
             price = Price(price, datetime.datetime.now(datetime.timezone.utc))
@@ -67,7 +70,7 @@ def run():
             variation = compare_last_two_prices(product.doc_id)
 
             if variation != 0:
-                print("> (i) notifying the user for price change")
+                logger.info("> (i) notifying the user for price change")
                 send_info(
                     "REDACTED",
                     {
@@ -78,9 +81,11 @@ def run():
                     },
                 )
 
-            print(f"> (i) price: ${price} ({variation * 100}% since last check)\n")
+            logger.info(
+                f"> (i) price: ${price} ({variation * 100}% since last check)\n"
+            )
 
-    print("Finished")
+    logger.success("Finished")
 
 
 run()
