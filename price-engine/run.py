@@ -6,7 +6,7 @@ from database import db
 from models import Product, Price
 from notificator import send_info
 
-from scrappers import paris, falabella, ripley
+from scrappers import paris, falabella, ripley, pcfactory
 
 
 def get_price(url):
@@ -16,6 +16,8 @@ def get_price(url):
         return paris.get_price(url)
     elif "ripley.cl" in url:
         return ripley.get_price(url)
+    elif "pcfactory.cl" in url:
+        return pcfactory.get_price(url)
 
 
 def save_price(product_id, price):
