@@ -1,7 +1,6 @@
 import re
-from requests_html import HTMLSession
 
-session = HTMLSession()
+from loguru import logger
 
 
 def parse_price(price_str):
@@ -9,7 +8,12 @@ def parse_price(price_str):
     return int(price)
 
 
-def get_price(url):
+def get_price(session, url):
     r = session.get(url)
     price_container_selector = "//*[@id='row']/div[2]/section[2]/dl/div"
-    return parse_price(r.html.xpath(price_container_selector, first=True).text)
+    price = r.html.xpath(price_container_selector, first=True)
+    if price:
+        return parse_price(price.text)
+    else:
+        logger.warning("> (!) price not found.")
+        return None

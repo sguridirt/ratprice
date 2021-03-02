@@ -2,23 +2,23 @@ import sys
 import datetime
 
 from loguru import logger
+from requests_html import HTMLSession
 
 from database import db
 from models import Product, Price
 from notificator import send_info
-
 from scrappers import paris, falabella, ripley, pcfactory
 
 
-def get_price(url):
+def get_price(session, url):
     if "falabella.com" in url:
-        return falabella.get_price(url)
+        return falabella.get_price(session, url)
     elif "paris.cl" in url:
-        return paris.get_price(url)
+        return paris.get_price(session, url)
     elif "ripley.cl" in url:
-        return ripley.get_price(url)
+        return ripley.get_price(session, url)
     elif "pcfactory.cl" in url:
-        return pcfactory.get_price(url)
+        return pcfactory.get_price(session, url)
 
 
 def save_price(product_id, price):
@@ -54,6 +54,8 @@ def compare_last_two_prices(product_id):
 
 def run():
     logger.info("Running...")
+
+    session = HTMLSession()
     product_docs = db.collection("products").stream()
     for product_doc in product_docs:
         if product_doc.exists:
@@ -61,25 +63,28 @@ def run():
 
             logger.info(f"Product: {product.name}")
 
-            price = get_price(product.url)
-            price = Price(price, datetime.datetime.now(datetime.timezone.utc))
-            save_price(product.doc_id, price)
+            price = get_price(session, product.url)
+            if price:
+                price = Price(price, datetime.datetime.now(datetime.timezone.utc))
+                save_price(product.doc_id, price)
 
-            variation = compare_last_two_prices(product.doc_id)
+                variation = compare_last_two_prices(product.doc_id)
 
-            if variation != 0:
-                logger.info("> (i) notifying the user for price change")
-                send_info(
-                    "REDACTED",
-                    {
-                        "name": product.name,
-                        "price": price.number,
-                        "variation": variation,
-                        "url": product.url,
-                    },
+                if variation != 0:
+                    logger.info("> (i) notifying the user for price change")
+                    send_info(
+                        "REDACTED",
+                        {
+                            "name": product.name,
+                            "price": price.number,
+                            "variation": variation,
+                            "url": product.url,
+                        },
+                    )
+
+                logger.info(
+                    f"> (i) price: ${price} ({variation * 100}% since last check)"
                 )
-
-            logger.info(f"> (i) price: ${price} ({variation * 100}% since last check)")
 
     logger.success("Finished")
 
