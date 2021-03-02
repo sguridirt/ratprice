@@ -9,8 +9,6 @@ from notificator import send_info
 
 from scrappers import paris, falabella, ripley, pcfactory
 
-logger.add("ratprice.log", colorize=True)
-
 
 def get_price(url):
     if "falabella.com" in url:
@@ -55,7 +53,7 @@ def compare_last_two_prices(product_id):
 
 
 def run():
-    logger.info("Running...\n")
+    logger.info("Running...")
     product_docs = db.collection("products").stream()
     for product_doc in product_docs:
         if product_doc.exists:
@@ -81,9 +79,7 @@ def run():
                     },
                 )
 
-            logger.info(
-                f"> (i) price: ${price} ({variation * 100}% since last check)\n"
-            )
+            logger.info(f"> (i) price: ${price} ({variation * 100}% since last check)")
 
     logger.success("Finished")
 
