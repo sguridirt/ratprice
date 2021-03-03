@@ -29,3 +29,19 @@ class Price(object):
 
     def __repr__(self):
         return f"Price(number={self.number}, datetime={self.datetime})"
+
+
+class User(object):
+    def __init__(self, name, email):
+        self.name = name
+        self.email = email
+
+    @staticmethod
+    def from_dict(source):
+        return User(source["name"], source["email"])
+
+    def to_dict(self):
+        return {"name": self.name, "email": self.email}
+
+    def __repr__(self):
+        return f"User(name={self.name}, email={self.email})"

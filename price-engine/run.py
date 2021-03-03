@@ -4,7 +4,7 @@ from loguru import logger
 from requests_html import HTMLSession
 
 from database import db
-from models import Product, Price
+from models import Product, Price, User
 from notificator import send_mail
 from scrappers import paris, falabella, ripley, pcfactory
 
@@ -51,6 +51,20 @@ def compare_last_two_prices(product_id):
         return 0
 
 
+def get_users_tracking_product(product_ref):
+    tracked_product_docs = (
+        db.collection("userTrackedProducts")
+        .where("productId", "==", product_ref)
+        .stream()
+    )
+
+    for doc in tracked_product_docs:
+        user_id = doc.to_dict()["userId"].get().id
+        user_data = db.collection("users").document(user_id).get().to_dict()
+        user = User(user_data["name"], user_data["email"])
+        yield user
+
+
 def run():
     logger.info("Running...")
 
@@ -59,6 +73,7 @@ def run():
     for product_doc in product_docs:
         if product_doc.exists:
             product = Product.from_dict(product_doc.id, product_doc.to_dict())
+            product_ref = db.collection("products").document(product.doc_id)
 
             logger.info(f"Product: {product.name}")
 
@@ -69,18 +84,21 @@ def run():
 
                 variation = compare_last_two_prices(product.doc_id)
 
-                if variation < 0:
+                if variation <= 0:
                     logger.info("> (i) notifying the user for price change")
-                    send_mail(
-                        "REDACTED",
-                        {
-                            "username": "Santiago",
-                            "product_name": "Audífonos XM4 Sony",
-                            "price": "180.000",
-                            "variation": -0.45,
-                            "url": "https://www.emol.com/",
-                        },
-                    )
+
+                    users_tracking_product = get_users_tracking_product(product_ref)
+                    for user in users_tracking_product:
+                        send_mail(
+                            user.email,
+                            {
+                                "username": user.name,
+                                "product_name": product.name,
+                                "price": price.number,
+                                "variation": variation,
+                                "url": product.url,
+                            },
+                        )
 
                 logger.info(
                     f"> (i) price: ${price} ({variation * 100}% since last check)"
