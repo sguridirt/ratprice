@@ -1,1 +1,1 @@
-from notificator import send_mail
+from .notificator import send_mail
