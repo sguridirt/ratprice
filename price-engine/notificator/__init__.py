@@ -1,0 +1,1 @@
+from notificator import send_mail

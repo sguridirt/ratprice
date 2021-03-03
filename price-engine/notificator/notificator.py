@@ -4,10 +4,15 @@ import smtplib, ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+from jinja2 import Environment, FileSystemLoader
+from jinja2.environment import Template
+
 port = 465
 context = ssl.create_default_context()
-sender = "ratprice. <ratpricemsg@gmail.com>"
 
+env = Environment(
+    loader=FileSystemLoader("{0}/templates/".format(os.path.dirname(__file__)))
+)
 
 text = """\
 Hi!
@@ -26,22 +31,34 @@ html = """\
 </html>"""
 
 
-def send_info(receiver, data):
+def load_template(data):
+    template = env.get_template("template.html")
+    output = template.render(data=data)
+    return output
+
+
+def send_mail(receiver, data):
+    sender = "ratprice. <ratpricemsg@gmail.com>"
 
     message = MIMEMultipart("alternative")
-    message["Subject"] = f"{data['name']} price: ${data['price']}"
+    message["Subject"] = f"🙌 {data['product_name']} price: ${data['price']}"
     message["From"] = sender
     message["To"] = receiver
 
     message.attach(
         MIMEText(
-            text.format(data["name"], data["price"], data["url"], data["variation"]),
+            text.format(
+                data["product_name"], data["price"], data["url"], data["variation"]
+            ),
             "plain",
         )
     )
+
+    html_content = load_template(data)
+
     message.attach(
         MIMEText(
-            html.format(data["name"], data["price"], data["url"], data["variation"]),
+            html_content,
             "html",
         )
     )
