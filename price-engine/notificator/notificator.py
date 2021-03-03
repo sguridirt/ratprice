@@ -31,6 +31,22 @@ html = """\
 </html>"""
 
 
+def format_price(price):
+    """Takes the price as an integer and returns it as a formatted string. (123000 -> $123.000)
+
+    Args:
+        price (int): the price as an integer.
+
+    Returns:
+        str: the formatted price as a string.
+    """
+    return "${:,}".format(price).replace(",", ".")
+
+
+def format_variation(variation):
+    return "{:.1%}".format(variation)
+
+
 def load_template(data):
     template = env.get_template("template.html")
     output = template.render(data=data)
@@ -44,6 +60,9 @@ def send_mail(receiver, data):
     message["Subject"] = f"🙌 {data['product_name']} price: ${data['price']}"
     message["From"] = sender
     message["To"] = receiver
+
+    data["price"] = format_price(data["price"])
+    data["variation"] = format_variation(data["variation"])
 
     message.attach(
         MIMEText(
@@ -66,3 +85,15 @@ def send_mail(receiver, data):
     with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
         server.login("ratpricemsg@gmail.com", os.environ["PASSWD"])
         server.sendmail(sender, receiver, message.as_string())
+
+
+send_mail(
+    "sguridirt@gmail.com",
+    {
+        "username": "Santiago",
+        "product_name": "test",
+        "price": 100000,
+        "variation": -0.1,
+        "url": "emol.com",
+    },
+)
