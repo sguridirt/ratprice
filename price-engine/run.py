@@ -69,7 +69,7 @@ def run():
 
                 variation = compare_last_two_prices(product.doc_id)
 
-                if variation != 0:
+                if variation < 0:
                     logger.info("> (i) notifying the user for price change")
                     send_mail(
                         "REDACTED",
