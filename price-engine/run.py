@@ -5,7 +5,7 @@ from requests_html import HTMLSession
 
 from database import db
 from models import Product, Price
-from notificator import send_info
+from notificator import send_mail
 from scrappers import paris, falabella, ripley, pcfactory
 
 
@@ -71,13 +71,14 @@ def run():
 
                 if variation != 0:
                     logger.info("> (i) notifying the user for price change")
-                    send_info(
+                    send_mail(
                         "REDACTED",
                         {
-                            "name": product.name,
-                            "price": price.number,
-                            "variation": variation,
-                            "url": product.url,
+                            "username": "Santiago",
+                            "product_name": "Audífonos XM4 Sony",
+                            "price": "180.000",
+                            "variation": -0.45,
+                            "url": "https://www.emol.com/",
                         },
                     )
 
