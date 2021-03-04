@@ -85,15 +85,3 @@ def send_mail(receiver, data):
     with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
         server.login("ratpricemsg@gmail.com", os.environ["PASSWD"])
         server.sendmail(sender, receiver, message.as_string())
-
-
-send_mail(
-    "REDACTED",
-    {
-        "username": "Santiago",
-        "product_name": "test",
-        "price": 100000,
-        "variation": -0.1,
-        "url": "emol.com",
-    },
-)
