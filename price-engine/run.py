@@ -53,9 +53,7 @@ def compare_last_two_prices(product_id):
 
 def get_users_tracking_product(product_ref):
     tracked_product_docs = (
-        db.collection("userTrackedProducts")
-        .where("productId", "==", product_ref)
-        .stream()
+        db.collection("userProducts").where("productId", "==", product_ref).stream()
     )
 
     for doc in tracked_product_docs:
