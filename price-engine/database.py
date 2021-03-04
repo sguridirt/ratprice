@@ -28,6 +28,22 @@ def user_track_product(user_id, product_id):
     return user_product_ref
 
 
+def add_field_collection_docs(field_path, field_value, collection_name):
+    """Adds a new field to every document in collection.
+
+    Args:
+        field_path (str): field name or path (eg. 'field_name' or 'field.nested_field_name')
+        field_value (Firestore supported value type): field value
+        collection_name (str): collection name in which documents to be updated reside
+    """
+    collection_docs = db.collection(collection_name).stream()
+    for doc in collection_docs:
+        if doc.exists:
+            db.collection(collection_name).document(doc.id).update(
+                {field_path: field_value}
+            )
+
+
 def copy_collection(source_collection_name, new_collection_name):
     collection_docs = db.collection(source_collection_name).stream()
 
