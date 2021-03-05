@@ -7,6 +7,7 @@ from database import db
 from models import Product, Price, User
 from notificator import send_mail
 from scrappers import paris, falabella, ripley, pcfactory
+from utils import get_product_site
 
 
 def get_price(session, url):
@@ -95,6 +96,7 @@ def run():
                                 "price": price.number,
                                 "variation": variation,
                                 "url": product.url,
+                                "site": get_product_site(product.url),
                             },
                         )
 
