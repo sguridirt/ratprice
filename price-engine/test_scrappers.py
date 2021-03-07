@@ -1,7 +1,7 @@
 import pytest
-from scrappers import falabella, paris, pcfactory, ripley
-
 from requests_html import HTMLSession
+
+from scrappers import falabella, paris, pcfactory, ripley
 
 
 @pytest.fixture(scope="module")

@@ -46,6 +46,7 @@ pyparsing==2.4.7
 pyppeteer==0.2.5
 pyquery==1.4.3
 pytest==6.2.2
+pytest-mock==3.5.1
 pytz==2021.1
 regex==2020.11.13
 requests==2.25.1
