@@ -103,6 +103,8 @@ def run():
                 logger.info(
                     f"> (i) price: ${price} ({variation * 100}% since last check)"
                 )
+            else:
+                logger.warning(f"> (!) price not detected for {product.name}")
 
     logger.success("Finished")
 
