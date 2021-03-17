@@ -4,8 +4,9 @@ import smtplib, ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
+from loguru import logger
+
 from jinja2 import Environment, FileSystemLoader
-from jinja2.environment import Template
 
 port = 465
 context = ssl.create_default_context()
@@ -83,5 +84,8 @@ def send_mail(receiver, data):
     )
 
     with smtplib.SMTP_SSL("smtp.gmail.com", port, context=context) as server:
-        server.login("ratpricemsg@gmail.com", os.environ["PASSWD"])
+        try:
+            server.login("ratpricemsg@gmail.com", os.environ["PASSWD"])
+        except smtplib.SMTPAuthenticationError as e:
+            logger.critical(f"Couldn't login to ratpricesmg.-\n {e}")
         server.sendmail(sender, receiver, message.as_string())
