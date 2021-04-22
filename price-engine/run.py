@@ -1,5 +1,6 @@
 import datetime
 
+from firebase_admin import firestore
 from loguru import logger
 from requests_html import HTMLSession
 
@@ -32,13 +33,12 @@ def compare_last_two_prices(product_id):
         db.collection("products")
         .document(product_id)
         .collection("prices")
-        .order_by("datetime")
+        .order_by("datetime", direction=firestore.Query.DESCENDING)
         .limit(2)
         .stream()
     )
     try:
         [current_price_doc, last_price_doc] = last_price_ref
-
         current_price = current_price_doc.to_dict()["number"]
         last_price = last_price_doc.to_dict()["number"]
 
