@@ -75,7 +75,7 @@ def alert(user_chat_id, data):
         str(int(data["variation"] * 100)),
         data["site"],
         str(data["price"]),
-        "https://www.paris.cl/polera-basica-manga-corta-lisa-legacy-371895.html?dwvar_371895_color=0401&cgid=#q=poleras%2Blegacy&start=1",
+        data["url"],
     )
 
     # TODO: check if throws an error when user not found, or blocked.
