@@ -89,7 +89,6 @@ def run():
 
                     users_tracking_product = get_users_tracking_product(product_ref)
                     for user in users_tracking_product:
-                        print("send message")
                         alert(
                             os.environ["USER_ID"],
                             {
