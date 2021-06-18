@@ -1,3 +1,4 @@
+import os
 import datetime
 
 from firebase_admin import firestore
@@ -6,9 +7,9 @@ from requests_html import HTMLSession
 
 from database import db
 from models import Product, Price, User
-from notificator import send_mail
 from scrappers import paris, falabella, ripley, pcfactory
 from utils import get_product_site
+from ratprice_telegram import alert
 
 
 def get_price(session, url):
@@ -83,13 +84,14 @@ def run():
 
                 variation = compare_last_two_prices(product.doc_id)
 
-                if variation < 0:
+                if variation <= 0:
                     logger.info("> (i) notifying the user for price change")
 
                     users_tracking_product = get_users_tracking_product(product_ref)
                     for user in users_tracking_product:
-                        send_mail(
-                            user.email,
+                        print("send message")
+                        alert(
+                            os.environ["USER_ID"],
                             {
                                 "username": user.name,
                                 "product_name": product.name,
