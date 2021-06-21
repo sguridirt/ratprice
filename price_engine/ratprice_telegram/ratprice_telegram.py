@@ -1,6 +1,7 @@
 import os
 import logging
 from telegram import ParseMode
+from telegram.error import BadRequest
 from telegram.ext import Updater, CommandHandler, dispatcher
 from telegram.update import Update
 
@@ -84,7 +85,10 @@ def alert(user_chat_id, data):
         text=msg,
         parse_mode=ParseMode.HTML,
     )
-    message.edit_text(msg, disable_web_page_preview=True, parse_mode=ParseMode.HTML)
+    try:
+        message.edit_text(msg, disable_web_page_preview=True, parse_mode=ParseMode.HTML)
+    except BadRequest:
+        pass
 
 
 if __name__ == "__main__":
