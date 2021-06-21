@@ -42,13 +42,12 @@ def compare_last_two_prices(product_id):
         [current_price_doc, last_price_doc] = last_price_ref
         current_price = current_price_doc.to_dict()["number"]
         last_price = last_price_doc.to_dict()["number"]
-
-        variation_decimal_pts = (last_price - current_price) / current_price
+        variation_decimal_pts = (current_price - last_price) / last_price
         return variation_decimal_pts
 
     except ValueError:
         logger.info(
-            "> (!) there weren't saved prices for the product. Variation set to 0 (zero)"
+            "> (!) there weren't saved prices for the product. Variation set to `0`"
         )
         return 0
 
