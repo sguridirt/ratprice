@@ -17,11 +17,11 @@ msg_template = """
 {0} <b>{1}</b> down <b>{2}</b>% {0}
 
 
-📉 ${4}
+📉 ${4} (<s>${5}</s>)
 🛍 <pre>{3}</pre>
 
 
-🛒 <b>Shop now</b>: {5}
+🛒 <b>Shop now</b>: {6}
 """
 
 
@@ -70,7 +70,7 @@ def chat():
 def choose_emoji(variation):
     emoji_scale = ["👀", "🙌", "🚨"]
 
-    variation = abs(float(variation))
+    variation = abs(variation)
 
     if variation >= 0.4:
         return emoji_scale[2]
@@ -89,6 +89,7 @@ def alert(user_chat_id, data):
         str(int(data["variation"] * 100)),
         data["site"],
         str(data["price"]),
+        str(data["old_price"]),
         data["url"],
     )
 
