@@ -43,7 +43,7 @@ def compare_last_two_prices(product_id):
         current_price = current_price_doc.to_dict()["number"]
         last_price = last_price_doc.to_dict()["number"]
         variation_decimal_pts = (current_price - last_price) / last_price
-        return variation_decimal_pts
+        return variation_decimal_pts, last_price
 
     except ValueError:
         logger.info(
@@ -81,7 +81,7 @@ def run():
                 price = Price(price, datetime.datetime.now(datetime.timezone.utc))
                 save_price(product.doc_id, price)
 
-                variation = compare_last_two_prices(product.doc_id)
+                variation, old_price_number = compare_last_two_prices(product.doc_id)
 
                 if variation < 0:
                     logger.info("> (i) notifying the user for price change")
@@ -91,9 +91,9 @@ def run():
                         alert(
                             os.environ["USER_ID"],
                             {
-                                "username": user.name,
                                 "product_name": product.name,
                                 "price": price.number,
+                                "old_price": old_price_number,
                                 "variation": variation,
                                 "url": product.url,
                                 "site": get_product_site(product.url),
