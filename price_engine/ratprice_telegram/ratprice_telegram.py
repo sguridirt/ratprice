@@ -67,11 +67,24 @@ def chat():
     updater.idle()
 
 
+def choose_emoji(variation):
+    emoji_scale = ["👀", "🙌", "🚨"]
+
+    variation = abs(float(variation))
+
+    if variation >= 0.4:
+        return emoji_scale[2]
+    elif variation >= 0.2:
+        return emoji_scale[1]
+    else:
+        return emoji_scale[0]
+
+
 def alert(user_chat_id, data):
     updater = setup()
 
     msg = msg_template.format(
-        "🚨",
+        choose_emoji(data["variation"]),
         data["product_name"],
         str(int(data["variation"] * 100)),
         data["site"],
