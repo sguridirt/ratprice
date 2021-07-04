@@ -1,6 +1,6 @@
 import os
 import logging
-from telegram import ParseMode, InlineKeyboardButton, InlineKeyboardMarkup, replymarkup
+from telegram import ParseMode, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest
 from telegram.ext import (
     Updater,
@@ -8,11 +8,11 @@ from telegram.ext import (
     Defaults,
     CallbackQueryHandler,
     ConversationHandler,
+    MessageHandler,
     Filters,
 )
-from telegram.ext.messagehandler import MessageHandler
 
-from database import save_user, fetch_user
+from database import save_user, fetch_user, save_product
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -22,7 +22,14 @@ TOKEN = os.environ["TELEGRAM_TOKEN"]
 PORT = int(os.environ.get("PORT", "8443"))
 APP_NAME = os.environ["APP_NAME"]
 
-SIGNUP_RESPONSE, SIGNUP_NAME_REGISTRATION, SIGNUP_CONFIRMATION = range(3)
+(
+    SIGNUP_RESPONSE,
+    SIGNUP_NAME_REGISTRATION,
+    SIGNUP_CONFIRMATION,
+    REGISTER_URL,
+    REGISTER_NAME,
+    CONFIRM_NEW_PRODUCT,
+) = range(6)
 
 ask_to_signup_keyboard = [
     [
@@ -82,6 +89,7 @@ def status(update, context):
             text=f"Sorry {user.to_dict()['name']}, can't access status, yet.",
         )
         return -1
+
     update.message.reply_text("Sorry, can't access status, yet.")
 
 
@@ -136,11 +144,9 @@ def register_user(update, context):
 
     if query.data == "confirm":
         query.edit_message_text("OK ✅")
-        # save data(user_id, name) to db
-        save_user(update.effective_chat.id, context.user_data["name"])
-        context.user_data["registered"] = True
 
-        # send confirmation message
+        save_user(update.effective_chat.id, context.user_data["name"])
+
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Your account has been created! 🎉",
@@ -150,6 +156,82 @@ def register_user(update, context):
             text="You can now procede to register your products with /add. After that, you'll just have to wait.",
         )
         return -1
+
+
+def add_product(update, context):
+    context.user_data["new_product"] = {}
+
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Register a new product!",
+    )
+
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Please, enter the product URL:",
+    )
+
+    return REGISTER_URL
+
+
+def register_product_url(update, context):
+    msg_text = update.message.text
+    # TODO: validate website
+    context.user_data["new_product"]["URL"] = msg_text
+
+    context.bot.send_message(
+        chat_id=update.effective_chat.id, text="Please, give it a name:"
+    )
+
+    return REGISTER_NAME
+
+
+def register_product_name_and_confirm(update, context):
+    msg_text = update.message.text
+    context.user_data["new_product"]["name"] = msg_text
+
+    confirm_keyboard = [
+        [
+            InlineKeyboardButton("Cancel", callback_data="cancel"),
+            InlineKeyboardButton("Confirm", callback_data="confirm"),
+        ]
+    ]
+    confirm_keyboard_markup = InlineKeyboardMarkup(confirm_keyboard)
+
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=f"Product:\nName: {context.user_data['new_product']['name']}\nURL: {context.user_data['new_product']['URL']}",
+        reply_markup=confirm_keyboard_markup,
+    )
+
+    return CONFIRM_NEW_PRODUCT
+
+
+def register_product(update, context):
+    query = update.callback_query
+
+    if query.data == "confirm":
+        query.edit_message_text(
+            text=f"Product:\nName: {context.user_data['new_product']['name']}\nURL: {context.user_data['new_product']['URL']}",
+        )
+        save_product(
+            name=context.user_data["new_product"]["name"],
+            url=context.user_data["new_product"]["URL"],
+            telegram_id=update.effective_chat.id,
+        )
+        context.user_data["new_product"] = {}
+
+        context.bot.send_message(
+            chat_id=update.effective_chat.id, text="Product added 🎉"
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Now I will track it and notify you of any price drop!",
+        )
+        return -1
+    else:
+        # TODO: fill this
+        pass
 
 
 def cancel(update, context):
@@ -166,11 +248,19 @@ def setup():
         entry_points=[
             CommandHandler("start", start),
             CommandHandler("status", status),
+            CommandHandler("add", add_product),
         ],
         states={
             SIGNUP_RESPONSE: [CallbackQueryHandler(check_signup_response)],
             SIGNUP_NAME_REGISTRATION: [MessageHandler(Filters.all, ask_for_username)],
             SIGNUP_CONFIRMATION: [CallbackQueryHandler(register_user)],
+            REGISTER_URL: [
+                MessageHandler(Filters.all, register_product_url)
+            ],  # TODO: Filter everything except urls
+            REGISTER_NAME: [
+                MessageHandler(Filters.all, register_product_name_and_confirm)
+            ],
+            CONFIRM_NEW_PRODUCT: [CallbackQueryHandler(register_product)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
