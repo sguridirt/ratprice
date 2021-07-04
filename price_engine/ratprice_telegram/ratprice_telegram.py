@@ -1,8 +1,18 @@
 import os
 import logging
-from telegram import ParseMode
+from telegram import ParseMode, InlineKeyboardButton, InlineKeyboardMarkup, replymarkup
 from telegram.error import BadRequest
-from telegram.ext import Updater, CommandHandler, Defaults, ExtBot
+from telegram.ext import (
+    Updater,
+    CommandHandler,
+    Defaults,
+    CallbackQueryHandler,
+    ConversationHandler,
+    Filters,
+)
+from telegram.ext.messagehandler import MessageHandler
+
+from database import save_user, fetch_user
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -11,6 +21,16 @@ logging.basicConfig(
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 PORT = int(os.environ.get("PORT", "8443"))
 APP_NAME = os.environ["APP_NAME"]
+
+SIGNUP_RESPONSE, SIGNUP_NAME_REGISTRATION, SIGNUP_CONFIRMATION = range(3)
+
+ask_to_signup_keyboard = [
+    [
+        InlineKeyboardButton("No", callback_data="CANCEL"),
+        InlineKeyboardButton("Yes!", callback_data="SIGNUP"),
+    ]
+]
+ask_to_signup_markup = InlineKeyboardMarkup(ask_to_signup_keyboard)
 
 msg_template = """
 {0} <b>{1}</b> down <b>{2}</b>% {0}
@@ -25,17 +45,116 @@ msg_template = """
 
 
 def start(update, context):
-    context.bot.send_message(chat_id=update.effective_chat.id, text="Hello!")
-    print(update.effective_chat.id)
-    # check if registered user
+    print("start")
+    user = fetch_user(update.effective_chat.id)
+
+    if user:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"Hello {user.to_dict()['name']} 👋",
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"I'm at your service.\nIf you want to see the status of your tracked products, send /status.\nIf you want to register a new product to track, use the /add command.",
+        )
+        return -1
+    else:
+        # TODO: Explain the use of this bot
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Hey, you are not registered. To work properly and save your product prices, I need you to register",
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Do you want to register?",
+            reply_markup=ask_to_signup_markup,
+        )
+
+        return SIGNUP_RESPONSE
 
 
 def status(update, context):
-    # get user
-    # check if existing user
-    # get user data from server
-    # display
+    user = fetch_user(update.effective_chat.id)
+
+    if user:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"Sorry {user.to_dict()['name']}, can't access status, yet.",
+        )
+        return -1
     update.message.reply_text("Sorry, can't access status, yet.")
+
+
+def check_signup_response(update, context):
+    query = update.callback_query
+
+    if query.data == "SIGNUP":
+        query.delete_message()
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Sign up 📝 \nI'll only need your name. Please type how do you want to be called:",
+        )
+        return SIGNUP_NAME_REGISTRATION
+    else:
+        query.edit_message_text(
+            text="Do you want to register? *NO*", parse_mode=ParseMode.MARKDOWN_V2
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="I can't work if you don't signup ☹️. If you want to register, please use /start.",
+        )
+        return -1
+
+
+def ask_for_username(update, context):
+    username = update.message.text
+    context.user_data["name"] = username
+
+    confirm_keyboard = [
+        [
+            InlineKeyboardButton("Cancel", callback_data="cancel"),
+            InlineKeyboardButton("Confirm", callback_data="confirm"),
+        ]
+    ]
+    confirm_keyboard_markup = InlineKeyboardMarkup(confirm_keyboard)
+
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=f"Confirm your registration:\n username: {username}",
+    )
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=f"OK?",
+        reply_markup=confirm_keyboard_markup,
+    )
+
+    return SIGNUP_CONFIRMATION
+
+
+def register_user(update, context):
+    query = update.callback_query
+
+    if query.data == "confirm":
+        query.edit_message_text("OK ✅")
+        # save data(user_id, name) to db
+        save_user(update.effective_chat.id, context.user_data["name"])
+        context.user_data["registered"] = True
+
+        # send confirmation message
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Your account has been created! 🎉",
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="You can now procede to register your products with /add. After that, you'll just have to wait.",
+        )
+        return -1
+
+
+def cancel(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text="See you later! 😴")
+    return -1
 
 
 def setup():
@@ -43,26 +162,26 @@ def setup():
     updater = Updater(token=TOKEN, use_context=True, defaults=defaults)
     dispatcher = updater.dispatcher
 
-    start_handler = CommandHandler("start", start)
-    status_handler = CommandHandler("status", status)
-
-    dispatcher.add_handler(start_handler)
-    dispatcher.add_handler(status_handler)
+    conversation_handler = ConversationHandler(
+        entry_points=[
+            CommandHandler("start", start),
+            CommandHandler("status", status),
+        ],
+        states={
+            SIGNUP_RESPONSE: [CallbackQueryHandler(check_signup_response)],
+            SIGNUP_NAME_REGISTRATION: [MessageHandler(Filters.all, ask_for_username)],
+            SIGNUP_CONFIRMATION: [CallbackQueryHandler(register_user)],
+        },
+        fallbacks=[CommandHandler("cancel", cancel)],
+    )
+    dispatcher.add_handler(conversation_handler)
 
     return updater
 
 
 def chat():
     updater = setup()
-    # updater.start_polling()
-    # updater.idle()
-
-    updater.start_webhook(
-        listen="0.0.0.0",
-        port=PORT,
-        url_path=TOKEN,
-        webhook_url=f"https://{APP_NAME}.herokuapp.com/{TOKEN}",
-    )
+    updater.start_polling()
     updater.idle()
 
 
