@@ -2,8 +2,7 @@ import os
 import logging
 from telegram import ParseMode
 from telegram.error import BadRequest
-from telegram.ext import Updater, CommandHandler, dispatcher
-from telegram.update import Update
+from telegram.ext import Updater, CommandHandler, Defaults, ExtBot
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -40,8 +39,8 @@ def status(update, context):
 
 
 def setup():
-
-    updater = Updater(token=TOKEN, use_context=True)
+    defaults = Defaults(disable_web_page_preview=True)
+    updater = Updater(token=TOKEN, use_context=True, defaults=defaults)
     dispatcher = updater.dispatcher
 
     start_handler = CommandHandler("start", start)
