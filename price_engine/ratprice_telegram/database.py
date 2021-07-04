@@ -33,6 +33,5 @@ def save_product(name, url, telegram_id):
                     "products", new_product_ref[1].id, client=db
                 ),
                 "userId": DocumentReference("users", user.id, client=db),
-                "test": True,
             }
         )
