@@ -271,7 +271,13 @@ def setup():
 
 def chat():
     updater = setup()
-    updater.start_polling()
+    # updater.start_polling()
+    updater.start_webhook(
+        listen="0.0.0.0",
+        port=PORT,
+        url_path=TOKEN,
+        webhook_url=f"https://{APP_NAME}.herokuapp.com/{TOKEN}",
+    )
     updater.idle()
 
 
