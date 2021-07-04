@@ -32,16 +32,19 @@ class Price(object):
 
 
 class User(object):
-    def __init__(self, name, email):
+    def __init__(self, name, email, telegramId):
         self.name = name
         self.email = email
+        self.telegramId = telegramId
 
     @staticmethod
     def from_dict(source):
-        return User(source["name"], source["email"])
+        return User(source["name"], source["email"], source["telegramId"])
 
     def to_dict(self):
-        return {"name": self.name, "email": self.email}
+        return {"name": self.name, "email": self.email, "telegramId": self.telegramId}
 
     def __repr__(self):
-        return f"User(name={self.name}, email={self.email})"
+        return (
+            f"User(name={self.name}, email={self.email}, telegramId={self.telegramId})"
+        )
