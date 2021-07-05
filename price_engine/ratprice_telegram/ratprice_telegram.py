@@ -252,10 +252,12 @@ def setup():
         ],
         states={
             SIGNUP_RESPONSE: [CallbackQueryHandler(check_signup_response)],
-            SIGNUP_NAME_REGISTRATION: [MessageHandler(Filters.all, ask_for_username)],
+            SIGNUP_NAME_REGISTRATION: [
+                MessageHandler(~Filters.command, ask_for_username)
+            ],
             SIGNUP_CONFIRMATION: [CallbackQueryHandler(register_user)],
             REGISTER_URL: [
-                MessageHandler(Filters.all, register_product_url)
+                MessageHandler(~Filters.command, register_product_url)
             ],  # TODO: Filter everything except urls
             REGISTER_NAME: [
                 MessageHandler(Filters.all, register_product_name_and_confirm)
