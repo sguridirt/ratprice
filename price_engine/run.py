@@ -49,7 +49,7 @@ def compare_last_two_prices(product_id):
         logger.info(
             "> (!) there weren't saved prices for the product. Variation set to `0`"
         )
-        return 0
+        return 0, 0
 
 
 def get_users_tracking_product(product_ref):
