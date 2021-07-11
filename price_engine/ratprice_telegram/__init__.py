@@ -1,1 +1,0 @@
-from .ratprice_telegram import alert
