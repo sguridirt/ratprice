@@ -12,7 +12,7 @@ from telegram.ext import (
     Filters,
 )
 
-from database import save_user, fetch_user, save_product
+from .database import save_user, fetch_user, save_product
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
