@@ -1,4 +1,5 @@
 import os
+
 from loguru import logger
 from telegram import ParseMode, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -12,6 +13,7 @@ from telegram.ext import (
 )
 
 from database import save_user, fetch_user, save_product
+from URLFilter import URLFilter
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 PORT = int(os.environ.get("PORT", "8443"))
@@ -25,6 +27,8 @@ APP_NAME = os.environ["APP_NAME"]
     REGISTER_NAME,
     CONFIRM_NEW_PRODUCT,
 ) = range(6)
+
+url_filter = URLFilter()
 
 ask_to_signup_keyboard = [
     [
@@ -66,7 +70,6 @@ def start(update, context):
         )
         return -1
     else:
-        # TODO: Explain the use of this bot
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="Hey, you are not registered. To work properly and save your product prices, I need you to register",
@@ -168,12 +171,12 @@ def add_product(update, context):
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Register a new product!",
+        text="➕  Lets register a new product!",
     )
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Please, enter the product URL:",
+        text="Enter the Product website link (eg. https://www.example.com/):",
     )
 
     return REGISTER_URL
@@ -262,8 +265,8 @@ def setup():
             ],
             SIGNUP_CONFIRMATION: [CallbackQueryHandler(register_user)],
             REGISTER_URL: [
-                MessageHandler(~Filters.command, register_product_url)
-            ],  # TODO: Filter everything except urls
+                MessageHandler(~Filters.command & url_filter, register_product_url)
+            ],
             REGISTER_NAME: [
                 MessageHandler(Filters.all, register_product_name_and_confirm)
             ],
@@ -320,7 +323,6 @@ def alert(user_chat_id, data):
         data["url"],
     )
 
-    # TODO: check if throws an error when user not found, or blocked.
     updater.bot.send_message(
         chat_id=user_chat_id,
         text=msg,
