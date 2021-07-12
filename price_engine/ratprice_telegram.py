@@ -14,10 +14,6 @@ from telegram.ext import (
 
 from database import save_user, fetch_user, save_product
 
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
-
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 PORT = int(os.environ.get("PORT", "8443"))
 APP_NAME = os.environ["APP_NAME"]
@@ -99,6 +95,7 @@ def status(update, context):
         )
         return -1
 
+    # TODO: implement status
     update.message.reply_text("Sorry, can't access status, yet.")
 
 
@@ -311,6 +308,7 @@ def choose_emoji(variation):
 
 
 def alert(user_chat_id, data):
+
     updater = setup()
 
     msg = msg_template.format(
@@ -324,7 +322,7 @@ def alert(user_chat_id, data):
     )
 
     # TODO: check if throws an error when user not found, or blocked.
-    message = updater.bot.send_message(
+    updater.bot.send_message(
         chat_id=user_chat_id,
         text=msg,
         parse_mode=ParseMode.HTML,
