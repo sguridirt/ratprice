@@ -1,1 +1,1 @@
-web: python3 price_engine/ratprice_telegram/ratprice_telegram.py
+web: python3 price_engine/ratprice_telegram.py
