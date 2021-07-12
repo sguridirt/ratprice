@@ -72,7 +72,11 @@ def start(update, context):
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="Hey, you are not registered. To work properly and save your product prices, I need you to register",
+            text="Hi! I am here to track the prices of internet products you tell me. I'll try to do my best to notify you when the price drops 📉. Enjoy!",
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="You are not registered 👀. To work properly and save your product prices, I need you to register",
         )
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -208,7 +212,7 @@ def register_product_name_and_confirm(update, context):
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"Product:\nName: {context.user_data['new_product']['name']}\nURL: {context.user_data['new_product']['URL']}",
+        text=f"Product:\nName: {context.user_data['new_product']['name']}\nURL: {context.user_data['new_product']['URL']}\n\nConfirm?",
         reply_markup=confirm_keyboard_markup,
     )
 
@@ -238,8 +242,16 @@ def register_product(update, context):
         )
         return -1
     else:
-        # TODO: fill this
-        pass
+        query.edit_message_text(
+            text=f"Product:\nName: {context.user_data['new_product']['name']}\nURL: {context.user_data['new_product']['URL']}",
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="🚫 You canceled this product registration",
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id, text="To register a product, use /add."
+        )
 
 
 def cancel(update, context):
