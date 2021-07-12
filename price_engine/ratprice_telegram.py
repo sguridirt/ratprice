@@ -1,7 +1,6 @@
 import os
 from loguru import logger
 from telegram import ParseMode, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.error import BadRequest
 from telegram.ext import (
     Updater,
     CommandHandler,
