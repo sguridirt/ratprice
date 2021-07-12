@@ -1,4 +1,3 @@
-import os
 import datetime
 
 from firebase_admin import firestore
@@ -74,7 +73,9 @@ def run():
             product = Product.from_dict(product_doc.id, product_doc.to_dict())
             product_ref = db.collection("products").document(product.doc_id)
 
-            logger.info(f"Product: {product.name}")
+            logger.info(
+                f"Product: {product.name} (website: {get_product_site(product.url)})"
+            )
 
             price = get_price(session, product.url)
             if price:
