@@ -1,5 +1,5 @@
 import os
-import logging
+from loguru import logger
 from telegram import ParseMode, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest
 from telegram.ext import (
@@ -53,6 +53,11 @@ msg_template = """
 
 def start(update, context):
     print("start")
+
+    logger.info(
+        f"> (i) Conversation started with {update.message.from_user['username']} ({update.effective_chat.id})"
+    )
+
     user = fetch_user(update.effective_chat.id)
 
     if user:
@@ -81,6 +86,10 @@ def start(update, context):
 
 
 def status(update, context):
+    logger.info(
+        f"> (i) {update.message.from_user['username']} ({update.effective_chat.id}) asked for his products status."
+    )
+
     user = fetch_user(update.effective_chat.id)
 
     if user:
@@ -320,10 +329,8 @@ def alert(user_chat_id, data):
         text=msg,
         parse_mode=ParseMode.HTML,
     )
-    try:
-        message.edit_text(msg, disable_web_page_preview=True, parse_mode=ParseMode.HTML)
-    except BadRequest:
-        pass
+
+    logger.info("> (i) Notification sent")
 
 
 if __name__ == "__main__":
