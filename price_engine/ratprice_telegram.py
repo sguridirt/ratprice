@@ -273,6 +273,20 @@ def cancel(update, context):
     return -1
 
 
+def error(update, context):
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="⚠️ Hey. I'm sorry to inform you that an error happened while I tried to handle your instructions. My developer will be notified.",
+    )
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="🔄 You may want to try again to check if it was a temporary issue.",
+    )
+
+    logger.error(f'> (!) Telegram: update "{update}" caused error "{context.error}"')
+    return -1
+
+
 def setup():
     defaults = Defaults(disable_web_page_preview=True)
     updater = Updater(token=TOKEN, use_context=True, defaults=defaults)
@@ -300,7 +314,9 @@ def setup():
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
+
     dispatcher.add_handler(conversation_handler)
+    dispatcher.add_error_handler()
 
     return updater
 
