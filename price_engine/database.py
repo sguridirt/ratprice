@@ -69,10 +69,10 @@ def save_product(name, url, telegram_id):
     user = fetch_user(telegram_id)
     if user:
         # Check if product already exists
-        product_ref = (
+        product_doc = (
             db.collection("products").where("URL", "==", url).limit(1).get()[0]
         )
-        product_doc = product_ref.get()[0]
+        product_ref = product_doc.reference
 
         if not product_doc.exists:
             product_ref = db.collection("products").add({"name": name, "URL": url})
@@ -80,9 +80,7 @@ def save_product(name, url, telegram_id):
         # Link user and new product
         db.collection("userProducts").add(
             {
-                "productId": DocumentReference(
-                    "products", product_ref[1].id, client=db
-                ),
+                "productId": DocumentReference("products", product_ref.id, client=db),
                 "userId": DocumentReference("users", user.id, client=db),
             }
         )
