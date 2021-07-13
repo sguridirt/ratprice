@@ -19,8 +19,14 @@ from database import (
     get_user_products,
     get_last_price,
 )
-from URLFilter import URLFilter
 from scrappers import REGISTERED_SCRAPPERS
+from URLFilter import URLFilter
+from message_templates import (
+    notification_msg,
+    product_status_msg,
+    confirm_user_registration_msg,
+    confirm_product_msg,
+)
 from utils import get_product_site
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
@@ -45,17 +51,6 @@ ask_to_signup_keyboard = [
     ]
 ]
 ask_to_signup_markup = InlineKeyboardMarkup(ask_to_signup_keyboard)
-
-msg_template = """
-{0} <b>{1}</b> down <b>{2}</b>% {0}
-
-
-📉 ${4} (<s>${5}</s>)
-🛍 <pre>{3}</pre>
-
-
-🛒 <b>Shop now</b>: {6}
-"""
 
 
 def start(update, context):
@@ -106,12 +101,22 @@ def status(update, context):
         products = get_user_products(user.id)
 
         for product in products:
-            last_price = get_last_price(product.id)
-            product = product.to_dict()
+            last_price, price_datetime = get_last_price(product.id)
+            product_info = product.to_dict()
+
             context.bot.send_message(
                 chat_id=update.effective_chat.id,
-                text=f"{product['name']}\n-{last_price}",
+                text=product_status_msg.format(
+                    product_info["name"],
+                    last_price if last_price else 0,
+                    price_datetime.strftime("%m/%d/%Y, %H:%M:%S (UTC)")
+                    if price_datetime
+                    else "never",
+                    get_product_site(product_info["URL"]),
+                ),
+                parse_mode=ParseMode.HTML,
             )
+
         return -1
 
     else:
@@ -163,7 +168,7 @@ def ask_for_username(update, context):
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"Confirm your registration:\n username: {username}",
+        text=confirm_user_registration_msg.format(username),
     )
     context.bot.send_message(
         chat_id=update.effective_chat.id,
@@ -203,7 +208,8 @@ def add_product(update, context):
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text="Enter the Product website link (eg. https://www.example.com/):",
+        text="Enter the product's *website link* \(eg\. https://www\.example\.com/\):",
+        parse_mode=ParseMode.MARKDOWN_V2,
     )
 
     return REGISTER_URL
@@ -224,7 +230,7 @@ def register_product_url(update, context):
     else:
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=f"I can't access this website's prices, yet. The available websites are: {REGISTERED_SCRAPPERS}",
+            text=f"I can't access this website's prices. The available websites are: {REGISTERED_SCRAPPERS}",
         )
         context.bot.send_message(
             chat_id=update.effective_chat.id,
@@ -247,7 +253,15 @@ def register_product_name_and_confirm(update, context):
 
     context.bot.send_message(
         chat_id=update.effective_chat.id,
-        text=f"Product:\nName: {context.user_data['new_product']['name']}\nURL: {context.user_data['new_product']['URL']}\n\nConfirm?",
+        text=confirm_product_msg.format(
+            context.user_data["new_product"]["name"],
+            context.user_data["new_product"]["URL"],
+        ),
+        parse_mode=ParseMode.HTML,
+    )
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=f"Confirm?",
         reply_markup=confirm_keyboard_markup,
     )
 
@@ -256,11 +270,11 @@ def register_product_name_and_confirm(update, context):
 
 def register_product(update, context):
     query = update.callback_query
+    query.delete_message()
+
+    # TODO: display 'typing...'
 
     if query.data == "confirm":
-        query.edit_message_text(
-            text=f"Product:\nName: {context.user_data['new_product']['name']}\nURL: {context.user_data['new_product']['URL']}",
-        )
         save_product(
             name=context.user_data["new_product"]["name"],
             url=context.user_data["new_product"]["URL"],
@@ -273,13 +287,10 @@ def register_product(update, context):
         )
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="Now I will track it and notify you of any price drop!",
+            text="Now I will track it and notify you any price drop!",
         )
         return -1
     else:
-        query.edit_message_text(
-            text=f"Product:\nName: {context.user_data['new_product']['name']}\nURL: {context.user_data['new_product']['URL']}",
-        )
         context.bot.send_message(
             chat_id=update.effective_chat.id,
             text="🚫 You canceled this product registration",
@@ -376,7 +387,7 @@ def alert(user_chat_id, data):
 
     updater = setup()
 
-    msg = msg_template.format(
+    msg = notification_msg.format(
         choose_emoji(data["variation"]),
         data["product_name"],
         str(int(data["variation"] * 100)),
