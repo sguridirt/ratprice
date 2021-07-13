@@ -86,3 +86,27 @@ def save_product(name, url, telegram_id):
                 "userId": DocumentReference("users", user.id, client=db),
             }
         )
+
+
+def get_user_products(user_id):
+    user_id = DocumentReference("users", user_id, client=db)
+
+    userProduct_stream = (
+        db.collection("userProducts").where("userId", "==", user_id).stream()
+    )
+    for userProduct in userProduct_stream:
+        product_ref = userProduct.get("productId")
+        yield product_ref.get()
+
+
+def get_last_price(product_id):
+    last_price_ref = (
+        db.collection("products")
+        .document(product_id)
+        .collection("prices")
+        .order_by("datetime", direction=firestore.Query.DESCENDING)
+        .limit(1)
+        .get()
+    )
+
+    return last_price_ref[0].to_dict()["number"]
