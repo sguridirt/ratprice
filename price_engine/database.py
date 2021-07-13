@@ -69,13 +69,13 @@ def save_product(name, url, telegram_id):
     user = fetch_user(telegram_id)
     if user:
         # Check if product already exists
-        product_doc = (
-            db.collection("products").where("URL", "==", url).limit(1).get()[0]
-        )
-        product_ref = product_doc.reference
-
-        if not product_doc.exists:
-            product_ref = db.collection("products").add({"name": name, "URL": url})
+        try:
+            product_doc = (
+                db.collection("products").where("URL", "==", url).limit(1).get()[0]
+            )
+            product_ref = product_doc.reference
+        except IndexError:
+            product_ref = db.collection("products").add({"name": name, "URL": url})[1]
 
         # Link user and new product
         db.collection("userProducts").add(
