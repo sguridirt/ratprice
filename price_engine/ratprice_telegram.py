@@ -14,6 +14,8 @@ from telegram.ext import (
 
 from database import save_user, fetch_user, save_product
 from URLFilter import URLFilter
+from scrappers import REGISTERED_SCRAPPERS
+from utils import get_product_site
 
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 PORT = int(os.environ.get("PORT", "8443"))
@@ -188,14 +190,26 @@ def add_product(update, context):
 
 def register_product_url(update, context):
     msg_text = update.message.text
-    # TODO: validate website
-    context.user_data["new_product"]["URL"] = msg_text
+    site = get_product_site(msg_text)
 
-    context.bot.send_message(
-        chat_id=update.effective_chat.id, text="Please, give it a name:"
-    )
+    if site in REGISTERED_SCRAPPERS:
+        context.user_data["new_product"]["URL"] = msg_text
 
-    return REGISTER_NAME
+        context.bot.send_message(
+            chat_id=update.effective_chat.id, text="Please, give it a name:"
+        )
+
+        return REGISTER_NAME
+    else:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=f"I can't access this website's prices, yet. The available websites are: {REGISTERED_SCRAPPERS}",
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Please, enter a good product website link (eg. https://www.example.com/):",
+        )
+        return REGISTER_URL
 
 
 def register_product_name_and_confirm(update, context):
