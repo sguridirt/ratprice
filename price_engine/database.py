@@ -107,4 +107,8 @@ def get_last_price(product_id):
         .get()
     )
 
-    return last_price_ref[0].to_dict()["number"]
+    try:
+        last_price = last_price_ref[0].to_dict()
+        return last_price["number"], last_price["datetime"]
+    except IndexError:
+        return None, None
