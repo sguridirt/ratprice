@@ -12,7 +12,13 @@ from telegram.ext import (
     Filters,
 )
 
-from database import save_user, fetch_user, save_product
+from database import (
+    save_user,
+    fetch_user,
+    save_product,
+    get_user_products,
+    get_last_price,
+)
 from URLFilter import URLFilter
 from scrappers import REGISTERED_SCRAPPERS
 from utils import get_product_site
@@ -97,14 +103,29 @@ def status(update, context):
     user = fetch_user(update.effective_chat.id)
 
     if user:
-        context.bot.send_message(
-            chat_id=update.effective_chat.id,
-            text=f"Sorry {user.to_dict()['name']}, can't access status, yet.",
-        )
+        products = get_user_products(user.id)
+
+        for product in products:
+            last_price = get_last_price(product.id)
+            product = product.to_dict()
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"{product['name']}\n-{last_price}",
+            )
         return -1
 
-    # TODO: implement status
-    update.message.reply_text("Sorry, can't access status, yet.")
+    else:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Sorry, you need to be registered to access status.",
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Do you want to register?",
+            reply_markup=ask_to_signup_markup,
+        )
+
+        return SIGNUP_RESPONSE
 
 
 def check_signup_response(update, context):
@@ -316,7 +337,7 @@ def setup():
     )
 
     dispatcher.add_handler(conversation_handler)
-    dispatcher.add_error_handler()
+    dispatcher.add_error_handler(error)
 
     return updater
 
