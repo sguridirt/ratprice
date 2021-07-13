@@ -6,20 +6,9 @@ from requests_html import HTMLSession
 
 from database import db
 from models import Product, Price, User
-from scrappers import paris, falabella, ripley, pcfactory
+from scrappers import get_price
 from utils import get_product_site
 from ratprice_telegram import alert
-
-
-def get_price(session, url):
-    if "falabella.com" in url:
-        return falabella.get_price(session, url)
-    elif "paris.cl" in url:
-        return paris.get_price(session, url)
-    elif "ripley.cl" in url:
-        return ripley.get_price(session, url)
-    elif "pcfactory.cl" in url:
-        return pcfactory.get_price(session, url)
 
 
 def save_price(product_id, price):
