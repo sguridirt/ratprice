@@ -78,12 +78,13 @@ def save_product(name, url, telegram_id):
             product_ref = db.collection("products").add({"name": name, "URL": url})[1]
 
         # Link user and new product
-        db.collection("userProducts").add(
+        _, new_product_ref = db.collection("userProducts").add(
             {
                 "productId": DocumentReference("products", product_ref.id, client=db),
                 "userId": DocumentReference("users", user.id, client=db),
             }
         )
+        return new_product_ref
 
 
 def get_user_products(user_id):
