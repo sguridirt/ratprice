@@ -7,10 +7,18 @@ def parse_price(price):
 
 def get_price(session, url):
     r = session.get(url)
-    price_selector = "/html/body/div[1]/div/section/div[1]/div[1]/div[2]/section[2]/div[2]/div/div[2]/div[1]/div[1]/ol/li[1]/div/span"
-    price = r.html.xpath(price_selector, first=True)
+    price = r.html.xpath("//@data-internet-price", first=True)
     if price:
         return parse_price(price.text)
     else:
         logger.warning("> (!) price not found.")
         return None
+
+
+from requests_html import HTMLSession
+
+session = HTMLSession()
+get_price(
+    session,
+    "https://www.falabella.com/falabella-cl/product/14797554/Audifonos-Bluetooth-Noise-Cancelling-WH-1000XM4/14797554",
+)
