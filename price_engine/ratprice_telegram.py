@@ -278,12 +278,18 @@ def register_product(update, context):
     # TODO: display 'typing...'
 
     if query.data == "confirm":
-        save_product(
+        new_product_ref = save_product(
             name=context.user_data["new_product"]["name"],
             url=context.user_data["new_product"]["URL"],
             telegram_id=update.effective_chat.id,
         )
         context.user_data["new_product"] = {}
+
+        if os.environ.get("MODE", "development") == "development":
+            new_product_doc = new_product_ref.get()
+            logger.info(
+                f"> (i) Telegram: started tracking product ({new_product_doc.id}) for user {update.from_user.username} ({update.from_user.id})"
+            )
 
         context.bot.send_message(
             chat_id=update.effective_chat.id, text="Product added 🎉"
@@ -358,16 +364,16 @@ def setup():
 
 def chat():
     updater = setup()
-    BOT_MODE = os.environ.get("BOT_MODE", "polling")
+    MODE = os.environ.get("MODE", "development")
 
-    if BOT_MODE == "webhook":
+    if MODE == "production":
         updater.start_webhook(
             listen="0.0.0.0",
             port=PORT,
             url_path=TOKEN,
             webhook_url=f"https://{APP_NAME}.herokuapp.com/{TOKEN}",
         )
-    elif BOT_MODE == "polling":
+    elif MODE == "development":
         updater.start_polling()
 
     updater.idle()
