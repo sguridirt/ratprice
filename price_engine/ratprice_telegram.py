@@ -135,6 +135,7 @@ def status(update, context):
 
 def check_signup_response(update, context):
     query = update.callback_query
+    query.answer()
 
     if query.data == "SIGNUP":
         query.delete_message()
@@ -181,6 +182,7 @@ def ask_for_username(update, context):
 
 def register_user(update, context):
     query = update.callback_query
+    query.answer()
 
     if query.data == "confirm":
         query.edit_message_text("OK ✅")
@@ -270,6 +272,7 @@ def register_product_name_and_confirm(update, context):
 
 def register_product(update, context):
     query = update.callback_query
+    query.answer()
     query.delete_message()
 
     # TODO: display 'typing...'
