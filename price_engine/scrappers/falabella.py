@@ -13,12 +13,3 @@ def get_price(session, url):
     else:
         logger.warning("> (!) price not found.")
         return None
-
-
-from requests_html import HTMLSession
-
-session = HTMLSession()
-get_price(
-    session,
-    "https://www.falabella.com/falabella-cl/product/14797554/Audifonos-Bluetooth-Noise-Cancelling-WH-1000XM4/14797554",
-)
