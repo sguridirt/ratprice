@@ -1,4 +1,6 @@
 import os
+from typing import Any, Iterator, Optional, Tuple
+from datetime import datetime
 
 import firebase_admin
 from firebase_admin import credentials
@@ -13,13 +15,13 @@ firebase_admin.initialize_app(cred)
 db = firestore.client()
 
 
-def create_product(name, url):
+def create_product(name: str, url: str) -> DocumentReference:
     product = Product(None, name, url)
     product_ref = db.collection("products").add(product.to_dict())
     return product_ref
 
 
-def user_track_product(user_id, product_id):
+def user_track_product(user_id: str, product_id: str) -> DocumentReference:
     user_ref = db.collection("users").document(user_id)
     product_ref = db.collection("products").document(product_id)
 
@@ -29,7 +31,7 @@ def user_track_product(user_id, product_id):
     return user_product_ref
 
 
-def add_field_collection_docs(field_path, field_value, collection_name):
+def add_field_collection_docs(field_path: str, field_value: Any, collection_name: str):
     """Adds a new field to every document in collection.
 
     Args:
@@ -45,7 +47,7 @@ def add_field_collection_docs(field_path, field_value, collection_name):
             )
 
 
-def copy_collection(source_collection_name, new_collection_name):
+def copy_collection(source_collection_name: str, new_collection_name: str):
     collection_docs = db.collection(source_collection_name).stream()
 
     for doc in collection_docs:
@@ -53,11 +55,11 @@ def copy_collection(source_collection_name, new_collection_name):
         db.collection(new_collection_name).add(doc.to_dict())
 
 
-def save_user(telegram_id, name):
+def save_user(telegram_id: int, name: str):
     db.collection("users").add({"telegramId": telegram_id, "name": name})
 
 
-def fetch_user(telegram_id):
+def fetch_user(telegram_id: int) -> Optional[DocumentReference]:
     user_ref = db.collection("users").where("telegramId", "==", telegram_id).limit(1)
     try:
         return user_ref.get()[0]
@@ -65,7 +67,7 @@ def fetch_user(telegram_id):
         return None
 
 
-def save_product(name, url, telegram_id):
+def save_product(name: str, url: str, telegram_id: int) -> DocumentReference:
     user = fetch_user(telegram_id)
     if user:
         # Check if product already exists
@@ -87,7 +89,7 @@ def save_product(name, url, telegram_id):
         return new_product_ref
 
 
-def get_user_products(user_id):
+def get_user_products(user_id: str) -> Iterator[DocumentReference]:
     user_id = DocumentReference("users", user_id, client=db)
 
     userProduct_stream = (
@@ -98,7 +100,7 @@ def get_user_products(user_id):
         yield product_ref.get()
 
 
-def get_last_price(product_id):
+def get_last_price(product_id: str) -> Tuple[Optional[int], Optional[datetime]]:
     last_price_ref = (
         db.collection("products")
         .document(product_id)

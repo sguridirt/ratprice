@@ -1,7 +1,7 @@
 import os
 
 from loguru import logger
-from telegram import ParseMode, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update, ParseMode, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -10,6 +10,7 @@ from telegram.ext import (
     ConversationHandler,
     MessageHandler,
     Filters,
+    CallbackContext,
 )
 
 from database import (
@@ -53,7 +54,7 @@ ask_to_signup_keyboard = [
 ask_to_signup_markup = InlineKeyboardMarkup(ask_to_signup_keyboard)
 
 
-def start(update, context):
+def start(update: Update, context: CallbackContext) -> int:
     print("start")
 
     logger.info(
@@ -90,7 +91,7 @@ def start(update, context):
         return SIGNUP_RESPONSE
 
 
-def status(update, context):
+def status(update: Update, context: CallbackContext) -> int:
     logger.info(
         f"> (i) {update.message.from_user['username']} ({update.effective_chat.id}) asked for his products status."
     )
@@ -133,7 +134,7 @@ def status(update, context):
         return SIGNUP_RESPONSE
 
 
-def check_signup_response(update, context):
+def check_signup_response(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
 
@@ -155,7 +156,7 @@ def check_signup_response(update, context):
         return -1
 
 
-def ask_for_username(update, context):
+def ask_for_username(update: Update, context: CallbackContext) -> int:
     username = update.message.text
     context.user_data["name"] = username
 
@@ -180,7 +181,7 @@ def ask_for_username(update, context):
     return SIGNUP_CONFIRMATION
 
 
-def register_user(update, context):
+def register_user(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
 
@@ -200,7 +201,7 @@ def register_user(update, context):
         return -1
 
 
-def add_product(update, context):
+def add_product(update: Update, context: CallbackContext) -> int:
     context.user_data["new_product"] = {}
 
     context.bot.send_message(
@@ -217,7 +218,7 @@ def add_product(update, context):
     return REGISTER_URL
 
 
-def register_product_url(update, context):
+def register_product_url(update: Update, context: CallbackContext) -> int:
     msg_text = update.message.text
     site = get_product_site(msg_text)
 
@@ -241,7 +242,7 @@ def register_product_url(update, context):
         return REGISTER_URL
 
 
-def register_product_name_and_confirm(update, context):
+def register_product_name_and_confirm(update: Update, context: CallbackContext) -> int:
     msg_text = update.message.text
     context.user_data["new_product"]["name"] = msg_text
 
@@ -270,7 +271,7 @@ def register_product_name_and_confirm(update, context):
     return CONFIRM_NEW_PRODUCT
 
 
-def register_product(update, context):
+def register_product(update: Update, context: CallbackContext) -> int:
     query = update.callback_query
     query.answer()
     query.delete_message()
@@ -309,12 +310,12 @@ def register_product(update, context):
         )
 
 
-def cancel(update, context):
+def cancel(update: Update, context: CallbackContext) -> int:
     context.bot.send_message(chat_id=update.effective_chat.id, text="See you later! 😴")
     return -1
 
 
-def error(update, context):
+def error(update: Update, context: CallbackContext) -> int:
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="⚠️ Hey. I'm sorry to inform you that an error happened while I tried to handle your instructions. My developer will be notified.",
@@ -379,7 +380,7 @@ def chat():
     updater.idle()
 
 
-def choose_emoji(variation):
+def choose_emoji(variation: int) -> str:
     emoji_scale = ["👀", "🙌", "🚨"]
 
     variation = abs(variation)
@@ -392,7 +393,7 @@ def choose_emoji(variation):
         return emoji_scale[0]
 
 
-def alert(user_chat_id, data):
+def alert(user_chat_id: int, data: dict):
 
     updater = setup()
 
