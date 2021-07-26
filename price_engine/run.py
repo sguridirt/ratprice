@@ -48,7 +48,9 @@ def get_users_tracking_product(product_ref):
     for doc in tracked_product_docs:
         user_id = doc.to_dict()["userId"].get().id
         user_data = db.collection("users").document(user_id).get().to_dict()
-        user = User(user_data["name"], user_data["email"], user_data["telegramId"])
+        user = User(
+            user_data["name"], user_data["telegramId"], email=user_data.get("email")
+        )
         yield user
 
 
