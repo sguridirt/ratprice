@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 class Product(object):
     def __init__(self, doc_id, name, url):
         self.doc_id = doc_id
@@ -32,7 +35,7 @@ class Price(object):
 
 
 class User(object):
-    def __init__(self, name, email, telegramId):
+    def __init__(self, name: str, telegramId: int, email: Optional[str] = None):
         self.name = name
         self.email = email
         self.telegramId = telegramId
