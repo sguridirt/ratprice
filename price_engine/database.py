@@ -111,10 +111,10 @@ def save_product(name: str, url: str, telegram_id: int) -> DocumentReference:
 def get_user_products(user_id: str) -> Iterator[DocumentReference]:
     user_id = DocumentReference("users", user_id, client=db)
 
-    userProduct_stream = (
+    user_product_stream = (
         db.collection("userProducts").where("userId", "==", user_id).stream()
     )
-    for userProduct in userProduct_stream:
+    for userProduct in user_product_stream:
         product_ref = userProduct.get("productId")
         yield product_ref.get()
 
