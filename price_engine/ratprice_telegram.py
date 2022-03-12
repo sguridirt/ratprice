@@ -19,6 +19,7 @@ from database import (
     save_product,
     get_user_products,
     get_last_price,
+    user_untrack_product,
 )
 from scrappers import REGISTERED_SCRAPPERS
 from URLFilter import URLFilter
@@ -27,6 +28,8 @@ from message_templates import (
     product_status_msg,
     confirm_user_registration_msg,
     confirm_product_msg,
+    confirm_product_untracking,
+    current_products_msg,
 )
 from utils import get_product_site
 
@@ -41,7 +44,9 @@ APP_NAME = os.environ["APP_NAME"]
     REGISTER_URL,
     REGISTER_NAME,
     CONFIRM_NEW_PRODUCT,
-) = range(6)
+    CHOOSE_UNTRACK_PRODUCT,
+    UNTRACK_PRODUCT,
+) = range(8)
 
 url_filter = URLFilter()
 
@@ -306,8 +311,124 @@ def register_product(update: Update, context: CallbackContext) -> int:
             text="🚫 You canceled this product registration",
         )
         context.bot.send_message(
-            chat_id=update.effective_chat.id, text="To register a product, use /add."
+def untrack_product(update: Update, context: CallbackContext) -> int:
+    logger.info(
+        f"> (i) {update.message.from_user['username']} ({update.effective_chat.id}) asked to untrack a product."
+    )
+
+    user = fetch_user(update.effective_chat.id)
+
+    if user:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id, text="➖ Let's untrack a product."
         )
+
+        products = [
+            (product.id, product.to_dict()) for product in get_user_products(user.id)
+        ]
+
+        message = current_products_msg
+        for i, product in enumerate(products):
+            product_text = f"{i+1}. <b>{product[1]['name']}</b> ({product[1]['URL']})\n"
+            message += product_text
+
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=message,
+            parse_mode=ParseMode.HTML,
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Which product do you want to untrack? Send the number before the product.",
+        )
+
+        context.user_data["products"] = products
+        return CHOOSE_UNTRACK_PRODUCT
+
+    else:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Sorry, you need to be registered to track and untrack products.",
+        )
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="Do you want to register?",
+            reply_markup=ask_to_signup_markup,
+        )
+
+        return SIGNUP_RESPONSE
+
+
+def choose_untrack_product(update: Update, context: CallbackContext) -> int:
+    msg_text = update.message.text
+
+    if not msg_text.isdigit():
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="The message you sent was not a number. To re-do the (entire) request, use the command /untrack.",
+        )
+        return -1
+
+    if int(msg_text) > len(context.user_data["products"]):
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="The number you sent was not in the options. To re-do the (entire) request, use the command /untrack",
+        )
+        return -1
+
+    product_chosen = context.user_data["products"][int(msg_text) - 1]
+
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text=confirm_product_untracking.format(
+            product_chosen[1]["name"], product_chosen[1]["URL"]
+        ),
+        parse_mode=ParseMode.HTML,
+    )
+    context.bot.send_message(
+        chat_id=update.effective_chat.id,
+        text="Confirm?",
+        reply_markup=confirm_keyboard_markup,
+    )
+
+    context.user_data["product_chosen"] = product_chosen
+
+    return UNTRACK_PRODUCT
+
+
+def unlink_product(update: Update, context: CallbackContext) -> int:
+    query = update.callback_query
+    query.answer()
+    query.delete_message()
+
+    if query.data == "confirm":
+        product_chosen = context.user_data["product_chosen"]
+        user = fetch_user(update.effective_chat.id)
+        result = user_untrack_product(user.id, product_chosen[0])
+
+        if result["success"]:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"🎉 Succesfully deleted '{product_chosen[1]['name']}'.",
+            )
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"Use the available commands if you want to do anything else.",
+            )
+            return -1
+        else:
+            context.bot.send_message(
+                chat_id=update.effective_chat.id,
+                text=f"🤔 Something failed, please try again. Use the /untrack command.",
+            )
+
+            return -1
+    else:
+        context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text="🚫 You canceled this product untracking",
+        )
+        return -1
 
 
 def cancel(update: Update, context: CallbackContext) -> int:
@@ -338,7 +459,7 @@ def setup():
         entry_points=[
             CommandHandler("start", start),
             CommandHandler("status", status),
-            CommandHandler("add", add_product),
+            CommandHandler("untrack", untrack_product),
         ],
         states={
             SIGNUP_RESPONSE: [CallbackQueryHandler(check_signup_response)],
@@ -353,6 +474,10 @@ def setup():
                 MessageHandler(Filters.all, register_product_name_and_confirm)
             ],
             CONFIRM_NEW_PRODUCT: [CallbackQueryHandler(register_product)],
+            CHOOSE_UNTRACK_PRODUCT: [
+                MessageHandler(~Filters.command, choose_untrack_product)
+            ],
+            UNTRACK_PRODUCT: [CallbackQueryHandler(unlink_product)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )

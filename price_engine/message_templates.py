@@ -30,3 +30,15 @@ confirm_product_msg = """
 💬 Name: {0}
 🔗 URL : {1}
 """
+
+confirm_product_untracking = """
+🛑 <b>Confirm product untracking:</b>
+
+💬 Name: {0}
+🔗 URL : {1}
+"""
+
+current_products_msg = """
+🛍 <b>Your products:</b>
+
+"""

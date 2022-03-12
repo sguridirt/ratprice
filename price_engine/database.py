@@ -31,6 +31,25 @@ def user_track_product(user_id: str, product_id: str) -> DocumentReference:
     return user_product_ref
 
 
+def user_untrack_product(user_id: str, product_id: str) -> dict[str, bool]:
+    user_id = DocumentReference("users", user_id, client=db)
+    product_id = DocumentReference("products", product_id, client=db)
+
+    user_product = (
+        db.collection("userProducts")
+        .where("userId", "==", user_id)
+        .where("productId", "==", product_id)
+        .limit(1)
+        .get()
+    )
+
+    try:
+        user_product[0].reference.delete()
+        return {"success": True}
+    except IndexError:
+        return {"success": False}
+
+
 def add_field_collection_docs(field_path: str, field_value: Any, collection_name: str):
     """Adds a new field to every document in collection.
 
