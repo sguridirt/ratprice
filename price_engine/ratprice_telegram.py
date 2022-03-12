@@ -58,10 +58,16 @@ ask_to_signup_keyboard = [
 ]
 ask_to_signup_markup = InlineKeyboardMarkup(ask_to_signup_keyboard)
 
+confirm_keyboard = [
+    [
+        InlineKeyboardButton("Cancel", callback_data="cancel"),
+        InlineKeyboardButton("Confirm", callback_data="confirm"),
+    ]
+]
+confirm_keyboard_markup = InlineKeyboardMarkup(confirm_keyboard)
+
 
 def start(update: Update, context: CallbackContext) -> int:
-    print("start")
-
     logger.info(
         f"> (i) Conversation started with {update.message.from_user['username']} ({update.effective_chat.id})"
     )
@@ -165,14 +171,6 @@ def ask_for_username(update: Update, context: CallbackContext) -> int:
     username = update.message.text
     context.user_data["name"] = username
 
-    confirm_keyboard = [
-        [
-            InlineKeyboardButton("Cancel", callback_data="cancel"),
-            InlineKeyboardButton("Confirm", callback_data="confirm"),
-        ]
-    ]
-    confirm_keyboard_markup = InlineKeyboardMarkup(confirm_keyboard)
-
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=confirm_user_registration_msg.format(username),
@@ -251,14 +249,6 @@ def register_product_name_and_confirm(update: Update, context: CallbackContext) 
     msg_text = update.message.text
     context.user_data["new_product"]["name"] = msg_text
 
-    confirm_keyboard = [
-        [
-            InlineKeyboardButton("Cancel", callback_data="cancel"),
-            InlineKeyboardButton("Confirm", callback_data="confirm"),
-        ]
-    ]
-    confirm_keyboard_markup = InlineKeyboardMarkup(confirm_keyboard)
-
     context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=confirm_product_msg.format(
@@ -294,7 +284,7 @@ def register_product(update: Update, context: CallbackContext) -> int:
         if os.environ.get("MODE", "development") == "development":
             new_product_doc = new_product_ref.get()
             logger.info(
-                f"> (i) Telegram: started tracking product ({new_product_doc.id}) for user {update.from_user.username} ({update.from_user.id})"
+                f"> (i) Telegram: started tracking product ({new_product_doc.id}) for user {query.from_user['username']} ({query.from_user['id']})"
             )
 
         context.bot.send_message(
@@ -436,6 +426,9 @@ def unlink_product(update: Update, context: CallbackContext) -> int:
 
 
 def cancel(update: Update, context: CallbackContext) -> int:
+    logger.info(
+        f"> (i) {update.message.from_user['username']} has terminated the conversation."
+    )
     context.bot.send_message(chat_id=update.effective_chat.id, text="See you later! 😴")
     return -1
 
