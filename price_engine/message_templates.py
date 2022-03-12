@@ -25,7 +25,7 @@ Confirm your registration data:
 """
 
 confirm_product_msg = """
-<b>New product:</b>
+<b>Confirm new product tracking:</b>
 
 💬 Name: {0}
 🔗 URL : {1}
