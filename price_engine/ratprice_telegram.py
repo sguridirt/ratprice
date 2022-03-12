@@ -75,7 +75,7 @@ def start(update: Update, context: CallbackContext) -> int:
         )
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text=f"I'm at your service.\nIf you want to see the status of your tracked products, send /status.\nIf you want to register a new product to track, use the /add command.",
+            text=f"I'm at your service.\nIf you want to see the status of your tracked products, send /status.\nIf you want to register a new product to track, use the /track command.",
         )
         return -1
     else:
@@ -201,7 +201,7 @@ def register_user(update: Update, context: CallbackContext) -> int:
         )
         context.bot.send_message(
             chat_id=update.effective_chat.id,
-            text="You can now procede to register your products with /add. After that, you'll just have to wait.",
+            text="You can now procede to register your products with /track. After that, you'll just have to wait.",
         )
         return -1
 
@@ -311,6 +311,10 @@ def register_product(update: Update, context: CallbackContext) -> int:
             text="🚫 You canceled this product registration",
         )
         context.bot.send_message(
+            chat_id=update.effective_chat.id, text="To register a product, use /track."
+        )
+
+
 def untrack_product(update: Update, context: CallbackContext) -> int:
     logger.info(
         f"> (i) {update.message.from_user['username']} ({update.effective_chat.id}) asked to untrack a product."
@@ -459,6 +463,7 @@ def setup():
         entry_points=[
             CommandHandler("start", start),
             CommandHandler("status", status),
+            CommandHandler("track", add_product),
             CommandHandler("untrack", untrack_product),
         ],
         states={
